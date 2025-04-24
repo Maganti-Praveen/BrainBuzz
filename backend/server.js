@@ -250,6 +250,11 @@ app.post("/api/seed", async (req, res) => {
   }
 });
 
+app.get("/test", (req, res) => {
+  res.send("Test route is working");
+});
+
+
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () =>
   console.log(`🚀 Server is running on port ${PORT}`)
