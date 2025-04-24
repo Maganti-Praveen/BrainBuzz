@@ -14,7 +14,7 @@ const AdminRegisterForm = () => {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:8000/api/auth/admin/register", {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/admin/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
