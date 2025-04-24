@@ -14,7 +14,7 @@ const AdminAuthForm = () => {
     const endpoint = isRegister ? 'register' : 'login';
 
     try {
-      const res = await axios.post(`http://localhost:8000/api/auth/admin/${endpoint}`, adminData);
+      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/admin/${endpoint}`, adminData);
 
       if (!isRegister) {
         sessionStorage.setItem('adminToken', res.data.token);
