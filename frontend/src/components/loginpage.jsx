@@ -43,7 +43,7 @@ const AuthForm = ({ setAuth }) => {
       return;
     }
     try {
-      const res = await axios.post("http://localhost:8000/api/auth/register", registerData, {
+      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/register`, registerData, {
         headers: { "Content-Type": "application/json" }
       });
       if (res.status === 201) {
