@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Categorycard from "../components/category";
+import Categorycard from "../components/Category";
 import "../css/home.css";
 import axios from "axios";
 
