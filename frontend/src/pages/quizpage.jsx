@@ -16,7 +16,7 @@ const Quizepage = () => {
   // Fetch quiz questions
   useEffect(() => {
     axios
-      .get(`http://localhost:8000/api/quiz/${category}`)
+      .get(`${process.env.REACT_APP_API_URL}/api/quiz/${category}`)
       .then((res) => {
         const data = res.data;
         setQuestions(data);
@@ -48,8 +48,7 @@ const Quizepage = () => {
       return;
     }
 
-    axios
-      .post("http://localhost:8000/api/save-score", {
+    axios.post(`${process.env.REACT_APP_API_URL}/api/save-score`, {
         email,
         score: scoreRef.current,
       })
