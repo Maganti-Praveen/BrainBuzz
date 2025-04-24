@@ -9,7 +9,7 @@ const Contact = () => {
   const handleChange = e => setFormData({...formData, [e.target.name]: e.target.value});
   const handleSubmit = e => {
     e.preventDefault();
-    axios.post("http://localhost:8000/api/contact", formData)
+    axios.post(`${process.env.REACT_APP_API_URL}/api/contact`, formData)
       .then(res => {
         setResponseMsg(res.data.message);
         setFormData({ name: "", email: "", message: "" });
