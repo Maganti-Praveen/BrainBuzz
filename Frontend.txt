@@ -1,0 +1,1046 @@
+Frontend:
+
+Components:
+
+AdminAuthForm.jsx:
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import '../css/AdminAuthForm.css';
+
+const AdminAuthForm = () => {
+  const [adminData, setAdminData] = useState({ username: '', email: '', password: '' });
+  const [isRegister, setIsRegister] = useState(false);
+  const [output, setOutput] = useState('');
+  const navigate = useNavigate();
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    const endpoint = isRegister ? 'register' : 'login';
+
+    try {
+      const res = await axios.post(`http://localhost:8000/api/auth/admin/${endpoint}`, adminData);
+
+      if (!isRegister) {
+        sessionStorage.setItem('adminToken', res.data.token);
+        setOutput('Admin login successful');
+        setTimeout(() => window.location.reload(), 500); // This triggers App.jsx to re-check sessionStorage
+
+      } else {
+        setOutput('Admin registered successfully. You can now login.');
+        setIsRegister(false);
+      }
+    } catch (err) {
+      setOutput(err.response?.data?.message || 'Operation failed');
+    }
+  };
+
+  return (
+    <div className="admin-auth-container">
+      <form onSubmit={handleSubmit} className="admin-auth-form">
+        <h2>{isRegister ? 'Admin Register' : 'Admin Login'}</h2>
+
+        {isRegister && (
+          <input
+            type="text"
+            placeholder="Username"
+            value={adminData.username}
+            onChange={e => setAdminData({ ...adminData, username: e.target.value })}
+            required
+          />
+        )}
+        <input
+          type="email"
+          placeholder="Email"
+          value={adminData.email}
+          onChange={e => setAdminData({ ...adminData, email: e.target.value })}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={adminData.password}
+          onChange={e => setAdminData({ ...adminData, password: e.target.value })}
+          required
+        />
+        <button type="submit">{isRegister ? 'Register as Admin' : 'Login as Admin'}</button>
+
+        <p onClick={() => setIsRegister(!isRegister)} className="admin-toggle-link">
+          {isRegister ? 'Already have an account? Login' : 'No account? Register as Admin'}
+        </p>
+
+        {output && <p className="admin-output">{output}</p>}
+      </form>
+    </div>
+  );
+};
+
+export default AdminAuthForm;
+
+AdminRegisterForm.jsx:
+// src/components/AdminRegisterForm.jsx
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+const AdminRegisterForm = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ username: "", password: "" });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await fetch("http://localhost:8000/api/auth/admin/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Admin registered! You can now login.");
+        navigate("/admin");
+      } else {
+        alert(data.message || "Registration failed");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong.");
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
+      <div className="bg-white p-6 rounded-xl shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-4 text-center">Admin Register</h2>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            placeholder="Username"
+            className="w-full px-4 py-2 border rounded-lg"
+            required
+          />
+
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Password"
+            className="w-full px-4 py-2 border rounded-lg"
+            required
+          />
+
+          <button
+            type="submit"
+            className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition"
+          >
+            Register
+          </button>
+        </form>
+
+        <div className="text-center mt-4">
+          <p className="text-sm text-gray-500">Already an admin?</p>
+          <button
+            onClick={() => navigate("/admin")}
+            className="mt-2 text-blue-500 hover:underline"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminRegisterForm;
+
+category.jsx:
+import React from "react";
+import "../css/category.css";
+
+const Categorycard = ({ category, icon, onClick }) => (
+  <div className="category-card" onClick={() => onClick(category)}>
+    <img src={icon} alt={category} className="category-icon" />
+    <p>{category}</p>
+  </div>
+);
+
+export default Categorycard;
+
+Layout.jsx:
+import React, { useEffect, useState } from "react";
+import Navbar from "./Navbar";
+import { Outlet, useNavigate } from "react-router-dom";
+
+const Layout = () => {
+  const navigate = useNavigate();
+  const [auth, setAuth] = useState(!!sessionStorage.getItem("token"));
+
+  useEffect(() => {
+    const checkAuth = () => setAuth(!!sessionStorage.getItem("token"));
+    window.addEventListener("storage", checkAuth);
+    return () => window.removeEventListener("storage", checkAuth);
+  }, []);
+
+  useEffect(() => {
+    if (!auth) navigate("/", { replace: true });
+  }, [auth, navigate]);
+
+  return (
+    <div>
+      <Navbar />
+      {auth && <Outlet />}
+    </div>
+  );
+};
+
+export default Layout;
+
+loginpage.jsx:
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "../css/loginform.css";
+import axios from "axios";
+
+const AuthForm = ({ setAuth }) => {
+  const [isActive, setIsActive] = useState(false);
+  const navigate = useNavigate();
+
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [loginOutput, setLoginOutput] = useState("");
+
+  const [registerData, setRegisterData] = useState({ name: "", email: "", password: "" });
+  const [registerOutput, setRegisterOutput] = useState("");
+
+  const handleToggle = () => setIsActive(!isActive);
+
+  const handleLogin = async e => {
+    e.preventDefault();
+    try {
+      const res = await axios.post("http://localhost:8000/api/auth/login", loginData, {
+        headers: { "Content-Type": "application/json" }
+      });
+
+      sessionStorage.setItem("token", res.data.token);
+      sessionStorage.setItem("username", res.data.name);
+      sessionStorage.setItem("email", res.data.email);
+
+      setLoginOutput("Login Successful");
+      setTimeout(() => {
+        setAuth(true);
+        navigate("/home", { replace: true });
+      }, 1000);
+    } catch (err) {
+      setLoginOutput(err.response?.data?.message || "Invalid Credentials");
+    }
+  };
+
+  const handleRegister = async e => {
+    e.preventDefault();
+    if (registerData.password.length < 8) {
+      setRegisterOutput("Password length must be at least 8 characters");
+      return;
+    }
+    try {
+      const res = await axios.post("http://localhost:8000/api/auth/register", registerData, {
+        headers: { "Content-Type": "application/json" }
+      });
+      if (res.status === 201) {
+        setRegisterOutput("Registration Successful");
+        setTimeout(() => setIsActive(false), 2000);
+      }
+    } catch (err) {
+      setRegisterOutput(err.response?.data?.message || "Signup failed. Try again!");
+    }
+  };
+
+  return (
+    <div className={`container ${isActive ? "active" : ""}`}>
+      <div className="form-box login">
+        <form onSubmit={handleLogin}>
+          <h1>Login</h1>
+          <div className="input-box">
+            <input
+              type="email"
+              placeholder="Email"
+              value={loginData.email}
+              onChange={e => setLoginData({ ...loginData, email: e.target.value })}
+              required
+            />
+            <i className="bx bxs-user"></i>
+          </div>
+          <div className="input-box">
+            <input
+              type="password"
+              placeholder="Password"
+              value={loginData.password}
+              onChange={e => setLoginData({ ...loginData, password: e.target.value })}
+              required
+            />
+            <i className="bx bxs-lock-alt"></i>
+          </div>
+          <div className="forgot-link"><a href="#">Forgot password?</a></div>
+          <button type="submit" className="btn">Login</button>
+          <p id="loutput">{loginOutput}</p>
+          <p className="text-sm text-gray-500">Are you an Admin?</p>
+          <button
+            onClick={() => navigate("/admin")}
+            className="mt-2 btn admin-btn"
+          >
+            Go to Admin Login
+          </button>
+        </form>
+      </div>
+      <div className="form-box register">
+        <form onSubmit={handleRegister}>
+          <h1>Registration</h1>
+          <div className="input-box">
+            <input
+              type="text"
+              placeholder="Username"
+              value={registerData.name}
+              onChange={e => setRegisterData({ ...registerData, name: e.target.value })}
+              required
+            />
+            <i className="bx bxs-user"></i>
+          </div>
+          <div className="input-box">
+            <input
+              type="email"
+              placeholder="Email"
+              value={registerData.email}
+              onChange={e => setRegisterData({ ...registerData, email: e.target.value })}
+              required
+            />
+            <i className="bx bxs-envelope"></i>
+          </div>
+          <div className="input-box">
+            <input
+              type="password"
+              placeholder="Password"
+              value={registerData.password}
+              onChange={e => setRegisterData({ ...registerData, password: e.target.value })}
+              required
+            />
+            <i className="bx bxs-lock-alt"></i>
+          </div>
+          <button type="submit" className="btn">Register</button>
+          <p id="routput">{registerOutput}</p>
+        </form>
+      </div>
+      <div className="toggle-box">
+        <div className="toggle-panel toggle-left">
+          <h1>Hello, Welcome!</h1>
+          <p>Don't have an Account?</p>
+          <button className="btn register-btn" onClick={handleToggle}>Register</button>
+        </div>
+        <div className="toggle-panel toggle-right">
+          <h1>Welcome Back!</h1>
+          <p>Already have an Account?</p>
+          <button className="btn login-btn" onClick={handleToggle}>Login</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AuthForm;
+
+Navbar.jsx:
+import React from "react";
+import "../css/navbar.css";
+import { useNavigate, Link } from "react-router-dom";
+import brainbuzzLogo from "../assets/brainbuzzlogo.png";
+
+const Navbar = () => {
+  const navigate = useNavigate();
+  const handleLogOut = () => {
+    sessionStorage.clear();
+    navigate("/", { replace: true });
+    window.location.reload();
+  };
+
+  return (
+    <nav>
+      <div className="nav-container">
+        <div className="Logo">
+          <img src={brainbuzzLogo} alt="BrainBuzz Logo" className="logo-img" />
+        </div>
+        <ul>
+          <li className="items"><Link to="/home">Home</Link></li>
+          <li className="items"><Link to="/profile">Profile</Link></li>
+          <li className="items"><Link to="/leaderboard">Leaderboard</Link></li>
+          <li className="items"><Link to="/contact">Contact</Link></li>
+        </ul>
+        <button onClick={handleLogOut}>Logout</button>
+      </div>
+    </nav>
+  );
+};
+
+export default Navbar;
+
+Quiz.jsx:
+import React from "react";
+import "../css/quiz.css";
+
+const Quiz = ({ category, question, timeLeft, onAnswer }) => (
+  <div className="quiz-container">
+    <div className="quiz-header">
+      <h2 className="quiz-category">{category}</h2>
+      <div className="quiz-timer"><span>{timeLeft}s</span></div>
+    </div>
+    <div className="quiz-question-box">
+      <p>{question?.text}</p>
+    </div>
+    <div className="quiz-options">
+      {question?.options.map((opt, idx) => (
+        <button
+          key={idx}
+          onClick={() => onAnswer(opt.isCorrect)}
+          className="quiz-option-btn"
+        >
+          {opt.text}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+export default Quiz;
+
+Score.jsx:
+import React from "react";
+import "../css/quiz.css";
+
+const Quiz = ({ category, question, timeLeft, onAnswer }) => (
+  <div className="quiz-container">
+    <div className="quiz-header">
+      <h2 className="quiz-category">{category}</h2>
+      <div className="quiz-timer"><span>{timeLeft}s</span></div>
+    </div>
+    <div className="quiz-question-box">
+      <p>{question?.text}</p>
+    </div>
+    <div className="quiz-options">
+      {question?.options.map((opt, idx) => (
+        <button
+          key={idx}
+          onClick={() => onAnswer(opt.isCorrect)}
+          className="quiz-option-btn"
+        >
+          {opt.text}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+export default Quiz;
+
+
+
+
+Pages:
+
+AdminCreateQuiz.jsx:
+import React, { useState } from 'react';
+import '../css/createquiz.css';
+
+const AdminCreateQuiz = () => {
+  const [category, setCategory] = useState('');
+  const [questions, setQuestions] = useState([
+    {
+      question: '',
+      options: ['', '', '', ''],
+      correctAnswer: '',
+    },
+  ]);
+
+  const handleQuestionChange = (index, field, value) => {
+    const updatedQuestions = [...questions];
+    if (field === 'question' || field === 'correctAnswer') {
+      updatedQuestions[index][field] = value;
+    } else {
+      updatedQuestions[index].options[field] = value;
+    }
+    setQuestions(updatedQuestions);
+  };
+
+  const addQuestion = () => {
+    setQuestions([
+      ...questions,
+      {
+        question: '',
+        options: ['', '', '', ''],
+        correctAnswer: '',
+      },
+    ]);
+  };
+
+  const removeQuestion = (index) => {
+    const updatedQuestions = questions.filter((_, i) => i !== index);
+    setQuestions(updatedQuestions);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const quizData = {
+      category,
+      questions,
+    };
+
+    try {
+      const response = await fetch('http://localhost:8000/api/quiz/add-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(quizData),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('✅ Quiz added successfully!');
+        setCategory('');
+        setQuestions([
+          {
+            question: '',
+            options: ['', '', '', ''],
+            correctAnswer: '',
+          },
+        ]);
+      } else {
+        alert(data.message || '❌ Error adding quiz.');
+      }
+    } catch (error) {
+      console.error('❌ Error adding quiz:', error);
+      alert('Error adding quiz. Please check console for details.');
+    }
+  };
+
+  return (
+    <div className="quiz-container">
+      <h2 className="quiz-heading">Create New Quiz</h2>
+      <form className="quiz-form" onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label>Category Name</label>
+          <input
+            type="text"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            required
+            placeholder="Enter quiz category"
+          />
+        </div>
+
+        {questions.map((q, idx) => (
+          <div className="question-block" key={idx}>
+            <h3>Question {idx + 1}</h3>
+            <input
+              type="text"
+              placeholder="Enter question"
+              value={q.question}
+              onChange={(e) => handleQuestionChange(idx, 'question', e.target.value)}
+              required
+            />
+
+            <div className="options-container">
+              {q.options.map((opt, i) => (
+                <input
+                  key={i}
+                  type="text"
+                  placeholder={`Option ${i + 1}`}
+                  value={opt}
+                  onChange={(e) => handleQuestionChange(idx, i, e.target.value)}
+                  required
+                />
+              ))}
+            </div>
+
+            <input
+              type="text"
+              placeholder="Correct answer"
+              value={q.correctAnswer}
+              onChange={(e) => handleQuestionChange(idx, 'correctAnswer', e.target.value)}
+              required
+            />
+
+            {questions.length > 1 && (
+              <button
+                type="button"
+                className="remove-btn"
+                onClick={() => removeQuestion(idx)}
+              >
+                🗑 Remove Question
+              </button>
+            )}
+          </div>
+        ))}
+
+        <button type="button" className="add-btn" onClick={addQuestion}>
+          ➕ Add New Question
+        </button>
+
+        <button type="submit" className="submit-btn">
+          ✅ Submit Quiz
+        </button>
+      </form>
+    </div>
+  );
+};
+
+export default AdminCreateQuiz;
+
+
+AdmnDashboard.jsx:
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import "../css/AdminDashboard.css";
+
+// This is my admin dashboard, trying to make it look cool like the image!
+const AdminDashboard = () => {
+  const navigate = useNavigate();
+  const adminName = sessionStorage.getItem("adminUsername") || "Admin";
+
+  // Check if the admin is logged in, otherwise send them back
+  useEffect(() => {
+    if (!sessionStorage.getItem("adminToken")) {
+      navigate("/admin", { replace: true });
+    }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("adminToken"); // Remove the token
+    sessionStorage.removeItem("adminUsername"); // Remove username too
+    navigate("/", { replace: true }); // Go back to login
+    window.location.reload();
+  };
+
+  return (
+    <div className="admin-dashboard-container">
+      <header className="admin-header">
+        <h1 className="admin-title">Admin Dashboard</h1>
+        <button className="logout-button" onClick={handleLogout}>
+          Logout
+        </button> {/* Added logout button up top */}
+      </header>
+      <h2 className="admin-welcome">welcome {adminName}!</h2> {/* Trying to match the image style */}
+      <div className="admin-actions">
+        <button
+          className="admin-button"
+          onClick={() => navigate("/admin/create-quiz")}
+        >
+          Add Questions
+        </button>
+        <button
+          className="admin-button"
+          onClick={() => navigate("/leaderboard")}
+        >
+          LeaderBoard
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboard;
+
+Contact.jsx:
+import React, { useState } from "react";
+import axios from "axios";
+import "../css/contact.css";
+
+const Contact = () => {
+  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+  const [responseMsg, setResponseMsg] = useState("");
+
+  const handleChange = e => setFormData({...formData, [e.target.name]: e.target.value});
+  const handleSubmit = e => {
+    e.preventDefault();
+    axios.post("http://localhost:8000/api/contact", formData)
+      .then(res => {
+        setResponseMsg(res.data.message);
+        setFormData({ name: "", email: "", message: "" });
+      })
+      .catch(() => setResponseMsg("There was an error sending your message."));
+  };
+
+  return (
+    <div className="contact-container">
+      <h1>Contact</h1>
+      <form onSubmit={handleSubmit} className="contact-form">
+        <label>Name:<input name="name" value={formData.name} onChange={handleChange} required /></label>
+        <label>Email:<input name="email" type="email" value={formData.email} onChange={handleChange} required /></label>
+        <label>Message:<textarea name="message" value={formData.message} onChange={handleChange} required/></label>
+        <button type="submit" className="btn">Send Message</button>
+      </form>
+      {responseMsg && <p className="response-message">{responseMsg}</p>}
+    </div>
+  );
+};
+
+export default Contact;
+
+
+Home.jsx:
+
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Categorycard from "../components/category";
+import "../css/home.css";
+import axios from "axios";
+
+// Import default category icons
+import webdevIcon from "../assets/webdev.png";
+import pythonIcon from "../assets/python.png";
+import scienceIcon from "../assets/science.png";
+import socialIcon from "../assets/social.png";
+import gkIcon from "../assets/gk.png";
+import funnyIcon from "../assets/funny.png";
+import politicalIcon from "../assets/political.png";
+
+const defaultCategories = {
+  WebDev: webdevIcon,
+  Python: pythonIcon,
+  Science: scienceIcon,
+  Social: socialIcon,
+  GK: gkIcon,
+  Funny: funnyIcon,
+  Political: politicalIcon,
+};
+
+const Home = () => {
+  const navigate = useNavigate();
+  const username = sessionStorage.getItem("username") || "User";
+
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    axios.get("http://localhost:8000/api/quiz/categories")
+      .then(res => {
+        setCategories(res.data);
+      })
+      .catch(err => console.error("❌ Failed to load categories:", err));
+  }, []);
+
+  const handleCategoryClick = (category) => {
+    navigate(`/quiz/${category}`);
+  };
+
+  return (
+    <div className="home-container">
+      <h1 className="welcome-title">
+        Welcome <span className="highlighted">{username}</span>!
+      </h1>
+      <p className="subtitle">Select a category</p>
+
+      <div className="category-list">
+        {categories.map((cat) => (
+          <Categorycard
+            key={cat}
+            category={cat}
+            icon={defaultCategories[cat] || null} // No icon for new dynamic categories
+            onClick={handleCategoryClick}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default Home;
+
+
+Leaderboard.jsx:
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import "../css/leaderboard.css";
+
+const Leaderboard = () => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    axios.get("http://localhost:8000/api/leaderboard")
+      .then(res => { setData(res.data); setLoading(false); })
+      .catch(err => { console.error(err); setLoading(false); });
+  }, []);
+
+  return (
+    <div className="leaderboard-container">
+      <h1>🏆 Leaderboard</h1>
+      {loading ? (
+        <p>Loading leaderboard...</p>
+      ) : (
+        <table className="leaderboard-table">
+          <thead>
+            <tr><th>Rank</th><th>Name</th><th>Score</th></tr>
+          </thead>
+          <tbody>
+            {data.map((e, i) => (
+              <tr key={i}>
+                <td>{i + 1}</td><td>{e.name}</td><td>{e.score}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+};
+
+export default Leaderboard;
+
+Profile.jsx:
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "../css/profile.css";
+
+const Profile = () => {
+  const navigate = useNavigate();
+  const [name, setName] = useState(sessionStorage.getItem("username") || "");
+  const [email, setEmail] = useState(sessionStorage.getItem("email") || "");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleUpdate = e => {
+    e.preventDefault();
+    sessionStorage.setItem("username", name);
+    sessionStorage.setItem("email", email);
+    setMessage("Profile updated successfully!");
+  };
+
+  const handleLogout = () => {
+    sessionStorage.clear();
+    navigate("/", { replace: true });
+    window.location.reload();
+  };
+
+  return (
+    <div className="profile-container">
+      <h1>Profile</h1>
+      <div className="profile-picture">
+        <img src="https://via.placeholder.com/150" alt="Profile" />
+        <button className="update-picture-btn">Update Picture</button>
+      </div>
+      <form onSubmit={handleUpdate} className="profile-form">
+        <div className="form-group">
+          <label>Name:</label>
+          <input value={name} onChange={e => setName(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label>Email:</label>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label>Update Password:</label>
+          <input type="password" placeholder="New Password" value={password}
+            onChange={e => setPassword(e.target.value)} />
+        </div>
+        <button type="submit" className="btn">Update Profile</button>
+      </form>
+      {message && <p className="message">{message}</p>}
+      <div className="badge-section">
+        <h3>Badge (Surprise)</h3>
+        <div className="badge">🎖️</div>
+      </div>
+      <button onClick={handleLogout} className="logout-btn">Logout</button>
+    </div>
+  );
+};
+
+export default Profile;
+
+quizpage.jsx:
+import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import Quiz from "../components/Quiz";
+import Score from "../components/Score";
+import { useParams } from "react-router-dom";
+
+const Quizepage = () => {
+  const { category = "General" } = useParams();
+  const [questions, setQuestions] = useState([]);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [quizScore, setQuizScore] = useState(0);
+  const scoreRef = useRef(0);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [quizFinished, setQuizFinished] = useState(false);
+
+  // Fetch quiz questions
+  useEffect(() => {
+    axios
+      .get(`http://localhost:8000/api/quiz/${category}`)
+      .then((res) => {
+        const data = res.data;
+        setQuestions(data);
+        setTimeLeft(data.length * 30); // 🕒 30 seconds per question
+      })
+      .catch((err) => console.error("❌ Failed to fetch questions", err));
+  }, [category]);
+
+  // Global timer
+  useEffect(() => {
+    if (quizFinished) return;
+
+    if (timeLeft > 0) {
+      const timer = setTimeout(() => setTimeLeft((prev) => prev - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+
+    if (timeLeft === 0 && questions.length > 0) {
+      setQuizFinished(true);
+      saveScore();
+    }
+  }, [timeLeft, quizFinished, questions.length]);
+
+  // Save score to backend
+  const saveScore = () => {
+    const email = sessionStorage.getItem("email");
+    if (!email) {
+      console.warn("⚠️ Email not found in session storage");
+      return;
+    }
+
+    axios
+      .post("http://localhost:8000/api/save-score", {
+        email,
+        score: scoreRef.current,
+      })
+      .then((res) => console.log("✅ Score saved:", res.data))
+      .catch((err) => console.error("❌ Failed to save score", err));
+  };
+
+  // Handle user's answer
+  const handleAnswer = (isCorrect) => {
+    if (isCorrect) {
+      scoreRef.current += 1;
+      setQuizScore((prev) => prev + 1);
+    }
+
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion((prev) => prev + 1);
+    } else {
+      setQuizFinished(true);
+      saveScore();
+    }
+  };
+
+  // UI rendering
+  if (!questions.length) return <h2>Loading questions...</h2>;
+  if (quizFinished)
+    return <Score score={quizScore} total={questions.length} />;
+
+  return (
+    <div style={{ marginTop: 80, padding: 20 }}>
+      <Quiz
+        category={category}
+        question={questions[currentQuestion]}
+        timeLeft={timeLeft}
+        onAnswer={handleAnswer}
+      />
+    </div>
+  );
+};
+
+export default Quizepage;
+
+
+App.jsx:
+import React, { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import AuthForm from "./components/loginpage";
+import AdminAuthForm from "./components/AdminAuthForm";
+import Layout from "./components/Layout";
+import Home from "./pages/Home";
+import Quizepage from "./pages/quizpage";
+import Profile from "./pages/Profile";
+import Leaderboard from "./pages/Leaderboard";
+import Contact from "./pages/Contact";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminCreateQuiz from './pages/AdminCreateQuiz';
+import AdminRegisterForm from "./components/AdminRegisterForm";
+
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(!!sessionStorage.getItem("token"));
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(!!sessionStorage.getItem("adminToken"));
+
+  useEffect(() => {
+    const syncAuth = () => {
+      setIsAuthenticated(!!sessionStorage.getItem("token"));
+      setIsAdminAuthenticated(!!sessionStorage.getItem("adminToken"));
+    };
+    window.addEventListener("storage", syncAuth);
+    return () => window.removeEventListener("storage", syncAuth);
+  }, []);
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Admin Auth & Dashboard */}
+        <Route path="/admin/register" element={<AdminRegisterForm />} />
+        <Route
+          path="/admin"
+          element={
+            isAdminAuthenticated
+              ? <Navigate to="/admin/dashboard" replace />
+              : <AdminAuthForm />
+          }
+        />
+        <Route
+          path="/admin/dashboard"
+          element={
+            isAdminAuthenticated
+              ? <AdminDashboard />
+              : <Navigate to="/admin" replace />
+          }
+        />
+        <Route
+          path="/admin/create-quiz"
+          element={
+            isAdminAuthenticated
+              ? <AdminCreateQuiz />
+              : <Navigate to="/admin" replace />
+          }
+        />
+        <Route
+          path="/admin/leaderboard"
+          element={
+            isAdminAuthenticated
+              ? <Leaderboard />
+              : <Navigate to="/admin" replace />
+          }
+        />
+
+        {/* User Auth & App */}
+        <Route
+          path="/"
+          element={
+            isAuthenticated
+              ? <Navigate to="/home" replace />
+              : <AuthForm setAuth={setIsAuthenticated} />
+          }
+        />
+        <Route element={isAuthenticated ? <Layout /> : <Navigate to="/" replace />}>
+          <Route path="home" element={<Home />} />
+          <Route path="quiz/:category" element={<Quizepage />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="leaderboard" element={<Leaderboard />} />
+          <Route path="contact" element={<Contact />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
