@@ -30,7 +30,7 @@ const Home = () => {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:8000/api/quiz/categories")
+    axios.get(`${process.env.REACT_APP_API_URL}/api/quiz/categories`)
       .then(res => {
         setCategories(res.data);
       })
