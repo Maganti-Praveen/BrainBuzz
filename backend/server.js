@@ -179,7 +179,7 @@ app.post("/api/seed", async (req, res) => {
           category: "Political",
           questions: [
             {
-                text: "How many seats does ys jagan🐐 won ",
+                text: "How many seats does ys jagan🃏 won ",
                 options: [
                   { text: "11", isCorrect: true },
                   { text: "6093", isCorrect: false },
