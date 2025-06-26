@@ -1,0 +1,29 @@
+.category-card {
+    width:130px;
+    height:150px;
+    background:#fff;
+    border-radius:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:transform 0.2s ease,box-shadow 0.2s ease;
+  }
+  .category-card:hover {
+    transform:translateY(-5px);
+    box-shadow:0 5px 15px rgba(0,0,0,0.15);
+  }
+  .category-icon {
+    width:50px;
+    height:50px;
+    margin-bottom:8px;
+  }
+  .category-card p {
+    margin:0;
+    font-size:1rem;
+    font-weight:500;
+    color:#333;
+  }
+  

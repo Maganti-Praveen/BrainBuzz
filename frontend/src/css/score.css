@@ -1,0 +1,22 @@
+.score-container {
+    max-width:600px;
+    margin:80px auto;
+    padding:20px;
+    background:#f0f2f5;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+    text-align:center;
+  }
+  .score-container h1 {
+    font-size:2rem;
+    margin-bottom:20px;
+  }
+  .score-container .btn {
+    padding:10px;
+    background:#7494ec;
+    color:#fff;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+  }
+  
